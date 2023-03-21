@@ -1,28 +1,32 @@
-CC = gcc++
-FLAGS = -Wall -Wextra -Werror -std=c++17
-CFLAGS = -Wall -Werror -Wextra
+.PHONY: all clean test $(SOURCENAME).a
 
-LIB_NAME = s21_matrix_oop
+CC = gcc
+CFLAGS = -Wall -Werror -Wextra -std=c++17 -lstdc++
+TFLAGS = -lgtest -pthread
+SOURCENAME = s21_matrix_oop
 
-SRCS=$(wildcard s21_*.cpp)
+ifeq ($(shell uname -s),Linux)
+	CC = g++
+endif
 
-OBJS=$(SRCS:.c=.o)
 
-all: $(LIB_NAME).a test clean
+all: $(SOURCENAME).a test
 
-%.o: %.c
-	$(CC) $(FLAGS) -c $< -o $@
+$(SOURCENAME).a: $(SOURCENAME).h
+	@$(CC) $(CFLAGS) -c $(SOURCENAME).cc
+	@ar rc $(SOURCENAME).a $(SOURCENAME).o
+	@ranlib $(SOURCENAME).a
+	@rm $(SOURCENAME).o
 
-$(LIB_NAME).a: $(OBJS)
-	ar rc $(LIB_NAME).a $^
-	ranlib $(LIB_NAME).a
-	rm -rf *.o
 
-test:
-	@rm -rf build
-	@mkdir build
-	@cd build && cmake ../ && make && ./main
+test: $(SOURCENAME).cc test.cc $(SOURCENAME).h
+	@$(CC) $(CFLAGS) $(SOURCENAME).cc test.cc -o test $(TFLAGS)
+	@./test
+
 
 clean:
+	@-rm -rf *.o *.a test
 
-	rm -rf *.o test *.a libgmock build cmake-build-debug
+style:
+	@clang-format -style=google -n s21_matrix_oop.cc s21_matrix_oop.h test.cc
+	@clang-format -style=google -i s21_matrix_oop.cc s21_matrix_oop.h test.cc
